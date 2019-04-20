@@ -28,9 +28,51 @@ public class Player : MonoBehaviour {
 		ActionStateMachine.Update( this );
     }
 
+	private void UpdateMoveSpeed() {
+		float currentMaxMoveSpd = Utility.StickLXSlople() * mMaxMoveSpeed;
+		// スティックが傾いているなら、加速か減速を行う
+		if( Utility.IsStickLXSlope() ) {
+
+			if( MoveSpeed <= mIniMoveSpeed ) {
+				MoveSpeed = mIniMoveSpeed;
+			}
+
+			if( MoveSpeed > mMaxMoveSpeed ) {
+				ToDeceleration();
+				return;
+			}
 
 
+			// 現在出せる最高速度が今の速度より大きいなら、最高速度へ徐々に近づける
+			if ( currentMaxMoveSpd >= MoveSpeed ) {
+				ToAcceleration();
+			}
+			else {
+				ToDeceleration();
+			}
 
+		}
+		// スティックが傾いていないなら、徐々に0.0fに戻す
+		else {
+			if( MoveSpeed <= mIniMoveSpeed ) {
+				MoveSpeed = 0.0f;
+				return;
+			}
+			ToDeceleration();
+		}
+	}
+
+	private void ToAcceleration() {
+		MoveSpeed =  Mathf.Min( MoveSpeed + mMoveAcceleration * Time.deltaTime, mMaxMoveSpeed );
+	}
+
+	private void ToDeceleration() {
+		MoveSpeed = Mathf.Max( mIniMoveSpeed, MoveSpeed - mMoveDeceleration * Time.deltaTime );
+	}
+
+	private void ResetMoveSpeed() {
+		MoveSpeed = 0.0f;
+	}
 
 	//--------------------------------------------------------------------
 	// 計算が必要なパラメータを返す
@@ -51,7 +93,7 @@ public class Player : MonoBehaviour {
 
 
 	public bool CanRun() {
-		if( Utility.StickLXSlople() < 0.9 || 1.0f < Utility.StickLXSlople() ) return false;
+		if( Utility.StickLXSlople() < mRunLowerLim || mRunUpperLim < Utility.StickLXSlople() ) return false;
 		ActionStateMachine.ChangeState( new Run() );
 		return true;
 	}
@@ -69,12 +111,18 @@ public class Player : MonoBehaviour {
 
 
 	// 移動関連
+	// 遷移のための閾値
 	[SerializeField] private float mSlowWalkLowerLim;
 	[SerializeField] private float mSlowWalkUpperLim;
 	[SerializeField] private float mWalkLowerLim;
 	[SerializeField] private float mWalkUpperLim;
 	[SerializeField] private float mRunLowerLim;
 	[SerializeField] private float mRunUpperLim;
+	// 移動速度
+	[SerializeField] private float mMaxMoveSpeed;
+	[SerializeField] private float mIniMoveSpeed;
+	[SerializeField] private float mMoveAcceleration;
+	[SerializeField] private float mMoveDeceleration;
 	public float MoveSpeed { get; set; }
 
 
